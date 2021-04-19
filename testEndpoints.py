@@ -21,7 +21,7 @@ def getPaymentPlans():
     response = requests.get('https://my-json-server.typicode.com/druska/trueaccord-mock-payments-api/payment_plans')
     paymentPlansDf = pd.read_json(json.dumps(response.json()))
     paymentPlans = paymentPlansDf.to_json(orient='records', lines=True)
-    return payment_plans
+    return paymentPlans
 
 
 def getPaymentPlansDF():
@@ -64,7 +64,6 @@ def isInPaymentPlan( debtId ):
     else:
         print("debt ID: " + str(debtId) + " has no payment plan")
         return False
-
 
 
 def main():
