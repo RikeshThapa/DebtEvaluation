@@ -48,6 +48,10 @@ def returnPayload():
 
     #print(np.any(ppdf[:, 0] == debtsdf['id']))
     debtsdf['is_in_payment_plan'] = [isInPaymentPlan( debtId ) for debtId in debtsdf['id']]
+
+    #Add payment plan id to debtsdf
+    debtsdf['payment_id'] = [getPaymentPlanID( debtId ) for debtId in debtsdf['id']]
+
     #remaining amout 
     #debtsdf['remaining_amount']
     return [debtsdf, ppdf, paymentsdf]
@@ -65,6 +69,19 @@ def isInPaymentPlan( debtId ):
         print("debt ID: " + str(debtId) + " has no payment plan")
         return False
 
+def getPaymentPlanID( debtId ):
+    ppdf = getPaymentPlansDF()
+    if debtId in ppdf.loc[:, 'debt_id']:
+        temp = ppdf.query("debt_id=="+str(debtId))
+        return temp["id"].iloc[0]
+    else:
+        return False
+
+# get amount paid so far by payment_plan_id
+def getAmountsPaidDF():
+    paymentsdf = getPaymentsDF()
+    amountPaid = paymentsdf.groupby(['payment_plan_id']).amount.sum()
+    return amountPaid
 
 def main():
     output = returnPayload()  
@@ -74,6 +91,9 @@ def main():
 
     ##Testing if debtId is in payment plan 
     isInPaymentPlan(4)
+
+    #Testing how much has been paid for a given payment plan id
+    print("Amount paid by ppid 0 is " + str(getAmountsPaidDF()))
 
     
     return output
