@@ -67,7 +67,6 @@ def getAmountPaid( payment_plan_id ):
     paymentsdf = getPaymentsDF()
     amountPaid = paymentsdf.groupby(['payment_plan_id']).amount.sum()
     if payment_plan_id > -1 and np.issubdtype(type(payment_plan_id), int):
-        print("internal function amount paid: ", amountPaid[payment_plan_id])
         return amountPaid[payment_plan_id]    
     else:
         return 0              
@@ -144,23 +143,13 @@ def returnPayload():
     # get final payment due on 
     debtsdf['next_payment_due_date'] = [getNextPaymentDueDate( debtId, debtsdf, ppdf, paymentsdf ) for debtId in debtsdf['id']]
 
-    return [debtsdf, ppdf, paymentsdf]
+    return debtsdf
 
 
 
 def main():
-    output = returnPayload()  
-    print(output[0])
-    print(output[1])
-    print(output[2])
-
-    ##Testing if debtId is in payment plan 
-    #isInPaymentPlan(4)
-
-    #Testing how much has been paid for a given payment plan id 
-    #x = getAmountPaid(0)
-    #print(x)
-    
+    output = returnPayload()
+    print(output)    
     return output
 
 if __name__ == "__main__":
