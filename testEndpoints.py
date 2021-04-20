@@ -41,21 +41,6 @@ def getPaymentsDF():
     paymentsDf = pd.read_json(json.dumps(response.json()))
     return paymentsDf
 
-def returnPayload():
-    debtsdf = getDebtsDF()
-    ppdf = getPaymentPlansDF()
-    paymentsdf = getPaymentsDF()
-
-    #print(np.any(ppdf[:, 0] == debtsdf['id']))
-    debtsdf['is_in_payment_plan'] = [isInPaymentPlan( debtId ) for debtId in debtsdf['id']]
-
-    #Add payment plan id to debtsdf
-    debtsdf['payment_plan_id'] = [getPaymentPlanID( debtId ) for debtId in debtsdf['id']]
-
-    #remaining amout 
-    debtsdf['remaining_amount'] = [getAmountToPay( debtId, debtsdf, ppdf ) for debtId in debtsdf['id']]
-    return [debtsdf, ppdf, paymentsdf]
-
 #
 # Helper Functions
 #
@@ -104,6 +89,44 @@ def getAmountToPay( debtId, debtsdf, ppdf ):
         amountPaid = getAmountPaid(ppid)
         df = debtsdf.query("id=="+str(debtId))
         return df["amount"].iloc[0]
+
+# assumption 
+def getNextPaymentDueDate():
+    # debt_id 0; remaining_amount == 0 ; dd = null
+    # debt_id 1; remaining_amout == 50; last pyment: 2020-08-08; next payment: last payment + 7 = 2020-08-15
+
+    #implementation:
+    # if(is_in_payment_plan):
+        # if(reamining_amount > 0):
+            # get greatest(last) date from paymentsDf by ppid
+            # get installment_frequency from ppdf by debtid
+            # parse installment frequency into days calculation (moment?)
+            # add installment frequency to greatest(last) payment date
+        # else:
+            # debt has been paid off 
+            # null
+    #  else:
+    #   # user is not on a payment plan yet
+    #   # null
+
+    return None
+
+## Composition function:
+def returnPayload():
+    debtsdf = getDebtsDF()
+    ppdf = getPaymentPlansDF()
+    paymentsdf = getPaymentsDF()
+
+    #print(np.any(ppdf[:, 0] == debtsdf['id']))
+    debtsdf['is_in_payment_plan'] = [isInPaymentPlan( debtId ) for debtId in debtsdf['id']]
+
+    #Add payment plan id to debtsdf
+    debtsdf['payment_plan_id'] = [getPaymentPlanID( debtId ) for debtId in debtsdf['id']]
+
+    #remaining amout 
+    debtsdf['remaining_amount'] = [getAmountToPay( debtId, debtsdf, ppdf ) for debtId in debtsdf['id']]
+    return [debtsdf, ppdf, paymentsdf]
+
 
 
 def main():

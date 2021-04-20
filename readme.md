@@ -23,3 +23,6 @@
 implementation:
 - I chose to go with pandas as the tool for converting JSON to JSON Lines format as the size is smaller. 
 Not significantly, but this can matter. Pandas is shorter (no spaces) whereas JSONLines package includes spaces.
+
+Assumptions:
+- In calculating next payment due on I have ignored the possibility of bank holidays and included weekends as possible payment due days.
