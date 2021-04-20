@@ -50,10 +50,10 @@ def returnPayload():
     debtsdf['is_in_payment_plan'] = [isInPaymentPlan( debtId ) for debtId in debtsdf['id']]
 
     #Add payment plan id to debtsdf
-    debtsdf['payment_id'] = [getPaymentPlanID( debtId ) for debtId in debtsdf['id']]
+    debtsdf['payment_plan_id'] = [getPaymentPlanID( debtId ) for debtId in debtsdf['id']]
 
     #remaining amout 
-    #debtsdf['remaining_amount']
+    debtsdf['remaining_amount'] = [getAmountToPay( debtId, debtsdf, ppdf ) for debtId in debtsdf['id']]
     return [debtsdf, ppdf, paymentsdf]
 
 #
@@ -63,10 +63,8 @@ def returnPayload():
 def isInPaymentPlan( debtId ):
     ppdf = getPaymentPlansDF()
     if debtId in ppdf.loc[: , 'debt_id']:
-        print("debt ID: " + str(debtId) + " has a payment plan")
         return True
     else:
-        print("debt ID: " + str(debtId) + " has no payment plan")
         return False
 
 def getPaymentPlanID( debtId ):
@@ -78,10 +76,35 @@ def getPaymentPlanID( debtId ):
         return False
 
 # get amount paid so far by payment_plan_id
-def getAmountsPaidDF():
+# return 0 if no payment plan 
+def getAmountPaid( payment_plan_id ):
     paymentsdf = getPaymentsDF()
     amountPaid = paymentsdf.groupby(['payment_plan_id']).amount.sum()
-    return amountPaid
+    if payment_plan_id > -1 and np.issubdtype(type(payment_plan_id), int):
+        print("internal function amount paid: ", amountPaid[payment_plan_id])
+        return amountPaid[payment_plan_id]    
+    else:
+        return 0              
+
+def getAmountToPay( debtId, debtsdf, ppdf ):
+    ppid = getPaymentPlanID( debtId )
+    # no payment plan and nothing has been paid
+    if(ppid > -1 and np.issubdtype(type(ppid), int) ):        
+        amountPaid = getAmountPaid(ppid)
+        df = ppdf.query("id=="+str(ppid))
+        amountToPay = df["amount_to_pay"].iloc[0] - amountPaid
+        print("ppid: ", ppid)
+        print(type(ppid))
+        print("amountPaid: ", amountPaid)
+        print("amountToPay: ", amountToPay)
+        return amountToPay
+        
+    #payment plan exists
+    else:
+        amountPaid = getAmountPaid(ppid)
+        df = debtsdf.query("id=="+str(debtId))
+        return df["amount"].iloc[0]
+
 
 def main():
     output = returnPayload()  
@@ -90,11 +113,11 @@ def main():
     print(output[2])
 
     ##Testing if debtId is in payment plan 
-    isInPaymentPlan(4)
+    #isInPaymentPlan(4)
 
-    #Testing how much has been paid for a given payment plan id
-    print("Amount paid by ppid 0 is " + str(getAmountsPaidDF()))
-
+    #Testing how much has been paid for a given payment plan id 
+    #x = getAmountPaid(0)
+    #print(x)
     
     return output
 
