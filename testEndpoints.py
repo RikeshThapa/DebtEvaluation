@@ -2,6 +2,7 @@ import requests
 import pandas as pd
 import numpy as np
 import json
+from datetime import timedelta
 
 # Debts 
 def getDebts():
@@ -78,10 +79,6 @@ def getAmountToPay( debtId, debtsdf, ppdf ):
         amountPaid = getAmountPaid(ppid)
         df = ppdf.query("id=="+str(ppid))
         amountToPay = df["amount_to_pay"].iloc[0] - amountPaid
-        print("ppid: ", ppid)
-        print(type(ppid))
-        print("amountPaid: ", amountPaid)
-        print("amountToPay: ", amountToPay)
         return amountToPay
         
     #payment plan exists
@@ -91,25 +88,43 @@ def getAmountToPay( debtId, debtsdf, ppdf ):
         return df["amount"].iloc[0]
 
 # assumption 
-def getNextPaymentDueDate():
+def getNextPaymentDueDate( debtId, debtsdf, ppdf, paymentsdf ):
     # debt_id 0; remaining_amount == 0 ; dd = null
     # debt_id 1; remaining_amout == 50; last pyment: 2020-08-08; next payment: last payment + 7 = 2020-08-15
 
     #implementation:
-    # if(is_in_payment_plan):
-        # if(reamining_amount > 0):
+    queryDf = debtsdf.query("id=="+str(debtId))
+    if( queryDf['is_in_payment_plan'].iloc[0] ):
+        if( queryDf['remaining_amount'].iloc[0] > 0 ):
+            ppid = queryDf['payment_plan_id'].iloc[0]
             # get greatest(last) date from paymentsDf by ppid
-            # get installment_frequency from ppdf by debtid
-            # parse installment frequency into days calculation (moment?)
+            mostRecentDate = getMostRecentPaymentDate(ppid, paymentsdf)
+            # get installment_frequency increment from ppdf by debtid
+            increment = getDayAddition( ppid, ppdf)
             # add installment frequency to greatest(last) payment date
-        # else:
+            nextPaymentDueOn = mostRecentDate + timedelta(days=increment)
+            return nextPaymentDueOn
+        else:
             # debt has been paid off 
-            # null
-    #  else:
-    #   # user is not on a payment plan yet
-    #   # null
+            return None
+    else:
+        # user is not on a payment plan yet
+        return None
 
     return None
+
+def getMostRecentPaymentDate( ppid, paymentsdf ):
+    df = paymentsdf.query('payment_plan_id=='+str(ppid))
+    most_recent_date = df['date'].max()
+    return most_recent_date
+
+def getDayAddition( ppid, ppdf):
+    paymentsQuerydf = ppdf.query("id=="+str(ppid))
+    installment_frequency = paymentsQuerydf['installment_frequency'].iloc[0]
+    if(installment_frequency == "WEEKLY"):
+        return 7
+    else:
+        return 14
 
 ## Composition function:
 def returnPayload():
@@ -117,14 +132,18 @@ def returnPayload():
     ppdf = getPaymentPlansDF()
     paymentsdf = getPaymentsDF()
 
-    #print(np.any(ppdf[:, 0] == debtsdf['id']))
+    # print(np.any(ppdf[:, 0] == debtsdf['id']))
     debtsdf['is_in_payment_plan'] = [isInPaymentPlan( debtId ) for debtId in debtsdf['id']]
 
-    #Add payment plan id to debtsdf
+    # Add payment plan id to debtsdf
     debtsdf['payment_plan_id'] = [getPaymentPlanID( debtId ) for debtId in debtsdf['id']]
 
-    #remaining amout 
+    # remaining amout 
     debtsdf['remaining_amount'] = [getAmountToPay( debtId, debtsdf, ppdf ) for debtId in debtsdf['id']]
+
+    # get final payment due on 
+    debtsdf['next_payment_due_date'] = [getNextPaymentDueDate( debtId, debtsdf, ppdf, paymentsdf ) for debtId in debtsdf['id']]
+
     return [debtsdf, ppdf, paymentsdf]
 
 
