@@ -1,4 +1,3 @@
-
 #external imports
 import json
 from datetime import timedelta
@@ -66,7 +65,7 @@ def getNextPaymentDueDate( debtId, debtsdf, ppdf, paymentsdf ):
             increment = getDayAddition( ppid, ppdf)
             # add installment frequency to greatest(last) payment date
             nextPaymentDueOn = mostRecentDate + timedelta(days=increment)
-            return nextPaymentDueOn
+            return nextPaymentDueOn.date().isoformat()
         else:
             # debt has been paid off 
             return None
@@ -107,7 +106,10 @@ def returnPayload():
     # get final payment due on 
     debtsdf['next_payment_due_date'] = [getNextPaymentDueDate( debtId, debtsdf, ppdf, paymentsdf ) for debtId in debtsdf['id']]
 
-    return debtsdf
+    #convert to JSON
+    debtsJSON = debtsdf.to_json(orient='records', lines=True)
+
+    return debtsJSON
 
 
 def main():
