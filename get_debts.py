@@ -1,60 +1,25 @@
-import requests
-import pandas as pd
-import numpy as np
+
+#external imports
 import json
 from datetime import timedelta
+import pandas as pd
+import numpy as np
 
-# Debts 
-def getDebts():
-    response = requests.get('https://my-json-server.typicode.com/druska/trueaccord-mock-payments-api/debts')
-    debtsdf = pd.read_json(json.dumps(response.json()))
-    debts = debtsdf.to_json(orient='records', lines=True)
-    return debts
-
-#For data manipulation purposes maintaining debts dataframe 
-def getDebtsDF():
-    response = requests.get('https://my-json-server.typicode.com/druska/trueaccord-mock-payments-api/debts')
-    debtsdf = pd.read_json(json.dumps(response.json()))
-    return debtsdf
-
-# payment plans 
-def getPaymentPlans():
-    response = requests.get('https://my-json-server.typicode.com/druska/trueaccord-mock-payments-api/payment_plans')
-    paymentPlansDf = pd.read_json(json.dumps(response.json()))
-    paymentPlans = paymentPlansDf.to_json(orient='records', lines=True)
-    return paymentPlans
-
-
-def getPaymentPlansDF():
-    response = requests.get('https://my-json-server.typicode.com/druska/trueaccord-mock-payments-api/payment_plans')
-    paymentPlansDf = pd.read_json(json.dumps(response.json()))
-    return paymentPlansDf
-
-
-def getPayments():
-    response = requests.get('https://my-json-server.typicode.com/druska/trueaccord-mock-payments-api/payments')
-    paymentsDf = pd.read_json(json.dumps(response.json()))
-    payments = paymentsDf.to_json(orient='records', lines=True)
-    return payments
-
-def getPaymentsDF():
-    response = requests.get('https://my-json-server.typicode.com/druska/trueaccord-mock-payments-api/payments')
-    paymentsDf = pd.read_json(json.dumps(response.json()))
-    return paymentsDf
+#internal imports
+from routes import getDebtsDF, getPaymentPlansDF, getPaymentsDF
 
 #
 # Helper Functions
 #
 
-def isInPaymentPlan( debtId ):
-    ppdf = getPaymentPlansDF()
+# Check if debtId is in a payment plan
+def isInPaymentPlan( debtId, ppdf ):
     if debtId in ppdf.loc[: , 'debt_id']:
         return True
     else:
         return False
 
-def getPaymentPlanID( debtId ):
-    ppdf = getPaymentPlansDF()
+def getPaymentPlanID( debtId, ppdf ):
     if debtId in ppdf.loc[:, 'debt_id']:
         temp = ppdf.query("debt_id=="+str(debtId))
         return temp["id"].iloc[0]
@@ -62,27 +27,27 @@ def getPaymentPlanID( debtId ):
         return False
 
 # get amount paid so far by payment_plan_id
-# return 0 if no payment plan 
-def getAmountPaid( payment_plan_id ):
-    paymentsdf = getPaymentsDF()
+# return 0 if no payment plan
+
+def getAmountPaid( payment_plan_id, paymentsdf ):
     amountPaid = paymentsdf.groupby(['payment_plan_id']).amount.sum()
     if payment_plan_id > -1 and np.issubdtype(type(payment_plan_id), int):
-        return amountPaid[payment_plan_id]    
+        return amountPaid[payment_plan_id]
     else:
-        return 0              
+        return 0
 
-def getAmountToPay( debtId, debtsdf, ppdf ):
-    ppid = getPaymentPlanID( debtId )
+def getAmountToPay( debtId, debtsdf, ppdf, paymentsdf ):
+    ppid = getPaymentPlanID( debtId, ppdf )
     # no payment plan and nothing has been paid
     if(ppid > -1 and np.issubdtype(type(ppid), int) ):        
-        amountPaid = getAmountPaid(ppid)
+        amountPaid = getAmountPaid(ppid, paymentsdf)
         df = ppdf.query("id=="+str(ppid))
         amountToPay = df["amount_to_pay"].iloc[0] - amountPaid
         return amountToPay
         
     #payment plan exists
     else:
-        amountPaid = getAmountPaid(ppid)
+        amountPaid = getAmountPaid(ppid, paymentsdf)
         df = debtsdf.query("id=="+str(debtId))
         return df["amount"].iloc[0]
 
@@ -90,7 +55,6 @@ def getAmountToPay( debtId, debtsdf, ppdf ):
 def getNextPaymentDueDate( debtId, debtsdf, ppdf, paymentsdf ):
     # debt_id 0; remaining_amount == 0 ; dd = null
     # debt_id 1; remaining_amout == 50; last pyment: 2020-08-08; next payment: last payment + 7 = 2020-08-15
-
     #implementation:
     queryDf = debtsdf.query("id=="+str(debtId))
     if( queryDf['is_in_payment_plan'].iloc[0] ):
@@ -132,19 +96,18 @@ def returnPayload():
     paymentsdf = getPaymentsDF()
 
     # print(np.any(ppdf[:, 0] == debtsdf['id']))
-    debtsdf['is_in_payment_plan'] = [isInPaymentPlan( debtId ) for debtId in debtsdf['id']]
+    debtsdf['is_in_payment_plan'] = [isInPaymentPlan( debtId, ppdf ) for debtId in debtsdf['id']]
 
     # Add payment plan id to debtsdf
-    debtsdf['payment_plan_id'] = [getPaymentPlanID( debtId ) for debtId in debtsdf['id']]
+    debtsdf['payment_plan_id'] = [getPaymentPlanID( debtId, ppdf ) for debtId in debtsdf['id']]
 
     # remaining amout 
-    debtsdf['remaining_amount'] = [getAmountToPay( debtId, debtsdf, ppdf ) for debtId in debtsdf['id']]
+    debtsdf['remaining_amount'] = [getAmountToPay( debtId, debtsdf, ppdf, paymentsdf ) for debtId in debtsdf['id']]
 
     # get final payment due on 
     debtsdf['next_payment_due_date'] = [getNextPaymentDueDate( debtId, debtsdf, ppdf, paymentsdf ) for debtId in debtsdf['id']]
 
     return debtsdf
-
 
 
 def main():

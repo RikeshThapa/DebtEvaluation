@@ -26,3 +26,7 @@ Not significantly, but this can matter. Pandas is shorter (no spaces) whereas JS
 
 Assumptions:
 - In calculating next payment due on I have ignored the possibility of bank holidays and included weekends as possible payment due days.
+
+Testing:
+- unittest from Python Standard library has been used for purposes of testing
+- 
