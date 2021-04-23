@@ -23,9 +23,11 @@ Running the project:
 - python test_get_debts.py: execute test suite
 
 Implementation:
-- I chose to go with pandas as the tool for converting JSON to JSON Lines format as the size is smaller. 
-Not significantly, but this can matter. Pandas is shorter (no spaces) whereas JSONLines package includes spaces.
-- Furthermore doing bid data manipulation (whihch I suspect is the purpose of this dataset) can be easie in pandas/ numpy due to the tools available in the library
+- I chose to go with pandas as the tool for converting JSON to JSON Lines format as the size is smaller. Not significantly, but this can matter. Pandas is shorter (no spaces) whereas JSONLines package includes spaces.
+- Furthermore doing big data manipulation (which I suspect is the purpose of this dataset) can be easier in pandas/ numpy due to the tools available in the library
+- The main function is returnPayload() in get_debts.py:
+    - here I pull the respective debts, payment plans, and payments data load them into pandas Data frames
+    - In turn I conduct the respective data processing
 
 Problems:
    1) get_debts.py in returnPayload() line 98

@@ -27,7 +27,6 @@ def getPaymentPlanID( debtId, ppdf ):
 
 # get amount paid so far by payment_plan_id
 # return 0 if no payment plan
-
 def getAmountPaid( payment_plan_id, paymentsdf ):
     amountPaid = paymentsdf.groupby(['payment_plan_id']).amount.sum()
     if payment_plan_id > -1 and np.issubdtype(type(payment_plan_id), int):
@@ -96,19 +95,14 @@ def returnPayload():
 
     # print(np.any(ppdf[:, 0] == debtsdf['id']))
     debtsdf['is_in_payment_plan'] = [isInPaymentPlan( debtId, ppdf ) for debtId in debtsdf['id']]
-
     # Add payment plan id to debtsdf
     debtsdf['payment_plan_id'] = [getPaymentPlanID( debtId, ppdf ) for debtId in debtsdf['id']]
-
     # remaining amout 
     debtsdf['remaining_amount'] = [getAmountToPay( debtId, debtsdf, ppdf, paymentsdf ) for debtId in debtsdf['id']]
-
     # get final payment due on 
     debtsdf['next_payment_due_date'] = [getNextPaymentDueDate( debtId, debtsdf, ppdf, paymentsdf ) for debtId in debtsdf['id']]
-
     #convert to JSON
     debtsJSON = debtsdf.to_json(orient='records', lines=True)
-
     return debtsJSON
 
 
