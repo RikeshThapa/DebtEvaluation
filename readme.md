@@ -63,4 +63,4 @@ Improvements
 - Creating a full project out of this code would be the logical next steps
 - At present I use no error handling due to time constraints even simple try-catch blocks will help prevnt basic errors in how data is received and handled
 - There is no Async/Await structure; everything is sequential; Setting up a proper structure will greatly improve code quality
-- My Pandas df manipulation and implementation can be greatly improved-- I call a for loop over the same data set in lines 98, 101, 104, 107 and 110. This naturally is as imeffecient as the process gets. We can manipulate all of these objects at once 
+- My Pandas df manipulation and implementation can be greatly improved-- I call a for loop over the same data set in lines 98, 101, 104, 107 and 110. This naturally this is ineffecient. We can manipulate all of these objects at once but maybe its good to do one operation with one action. And rather focus on doing data manipulation in parallel.
